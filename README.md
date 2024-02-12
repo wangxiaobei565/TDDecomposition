@@ -2,7 +2,7 @@
 
 
 - Intuitive Example : Standard TD approaches **VS** TD Decomposition approach
-<!-- ![image](https://github.com/wangxiaobei565/ItemDecomposition/blob/main/img/user_reco.jpg) -->
+![image](https://github.com/wangxiaobei565/TD_Decomposition/blob/main/img/MDP.png)
 
 Our RL simulator is followed [KuaiSim(Online simulator for RL-based recommendation)](https://github.com/CharlieMat/KRLBenchmark) 
 
