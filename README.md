@@ -66,15 +66,6 @@ Evaluation metrics and protocol
 bash train_{model name}_krpure_requestlevel.sh
 ```
 
-### 2.1.3 Baselines
-
-| Algorithm | Average L-reward | Max L-reward |  Coverage   |    ILD    |
-| :-------: | :--------------: | :----------: | :---------: | :-------: |
-|    CF     |    **2.253**     |    4.039     |   100.969   |   0.543   |
-| ListCVAE  |      2.075       |  **4.042**   | **446.100** | **0.565** |
-|    PRM    |      2.174       |    3.811     |   27.520    |   0.53    |
-
-
 
 ## 2.2 Whole-session Recommendation
 
@@ -99,9 +90,81 @@ bash train_{model name}_krpure_wholesession.sh
 
 
 # 3. Our code
-We release our approach TD decomposition with model actor-critic(A2C), DDPG, DQN and HAC and all original and decomposed version are in /agents. The corresponding  facade, policy, critic are also concluded.
+We have released our TD decomposition approach with four different reinforcement learning methods: model actor-critic (A2C), deep deterministic policy gradient (DDPG), deep Q-network (DQN), and Hyper-Actor Critic(HAC). All original and decomposed versions of these methods are included in the /agents directory, along with their corresponding facade, policy, and critic modules.
 
+Our TD decomposition method can be easily applied to any other TD-based reinforcement learning method. Below, we will provide an example of how to update an RL-based TD method to a decomposed version：
+## critic 
 
+We should parpare two critic: one for Q and another for V
+```
+@input -> ouput:
+ Q  -  (B, state_dim)  ->  (B, action_dim)
+ V  -  (B, state_dim)  ->  (B, 1)
+```
+
+## facade
+
+facade for TD decomposition
+```
+# 1. add one element debias in buffer
+# 2. calculate the normal 
+
+```
+
+## agents
+We need to update the get_loss function for TD decomposition
+1. Init two critic for Q and V
+```
+self.critic1 = facade.critic1
+self.critic1_target = copy.deepcopy(self.critic1)
+self.V_optimizer = torch.optim.Adam(self.critic1.parameters(), lr=args.critic1_lr, 
+                                         weight_decay=args.critic_decay)
+self.critic2 = facade.critic2
+self.critic2_target = copy.deepcopy(self.critic2)
+self.Q_optimizer = torch.optim.Adam(self.critic2.parameters(), lr=args.critic2_lr, 
+```
+2. To calculate debias_beta, we need to use the observed_likelihood values stored in the replay buffer, along with the current likelihood computed during training.
+```
+observed_likelihood = policy_output['hac_pro']
+observed_action = policy_output['action_emb']
+curr_mu = current_policy_output['action_emb']
+curr_std = self.facade.noise_var
+curr_likelihood = torch.exp(-((observed_action - curr_mu) ** 2) / (2 * (curr_std** 2))) / (torch.sqrt(2 * torch.tensor(torch.pi) * (curr_std** 2))) + 1e-20
+curr_likelihood = curr_likelihood.mean(dim=1)
+debias_beta = (self.lambda_ + curr_likelihood) / (self.lambda_ + observed_likelihood) 
+```
+3. Two-step TD Decomposition
+- action TD
+```
+# get Q(t) and V(t)
+current_V = self.critic1({'state_emb': S})['v']
+current_Q = self.critic2({'state_emb': S, 'action_emb': L})['q']
+
+# actionTD Loss with debias_beta
+loss_actionTD = (debias_beta * F.mse_loss(current_Q_de, current_V)).mean()      
+        
+if do_critic_update and self.critic1_lr > 0:
+    self.V_optimizer.zero_grad()
+    loss_actionTD.backward()
+    self.V_optimizer.step()
+```
+- state TD
+
+```
+# get reward, Q(t) and V(t+1)
+next_V = self.critic1({'state_emb': S_})['v']
+current_Q = self.critic2({'state_emb': S, 'action_emb': L})['q']
+
+# stateTD Loss
+Q_S = reward + self.gamma * (~done_mask * next_V)
+
+loss_stateTD = F.mse_loss(current_Q, Q_S).mean()
+        
+if do_critic_update and self.critic2_lr > 0:
+    self.Q_optimizer.zero_grad()
+    loss_stateTD.backward()  
+    self.Q_optimizer.step()
+```
 
 ## 3. Run code
 #### Search optimal hyperparameter for different method(optinonal)
