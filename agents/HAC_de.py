@@ -135,14 +135,30 @@ class HAC_de(DDPG_de):
         S = hyper_output['state_emb'].detach()
         A = hyper_output['action_emb'].detach()
         
-        hac_pro = policy_output['hac_pro']
+        
+        observed_likelihood = policy_output['hac_pro']
+        # (B, action_dim)
+        observed_action = policy_output['action_emb']
+        
+        # (B, action_dim)
+        curr_mu = hyper_output['action_emb']
+        curr_std = self.facade.noise_var
+        
+        
+        curr_likelihood = torch.exp(-((observed_action - curr_mu) ** 2) / (2 * (curr_std** 2))) / (torch.sqrt(2 * torch.tensor(torch.pi) * (curr_std** 2))) + 1e-20
+        # (B,)
+        curr_likelihood = curr_likelihood.mean(dim=1)
+        
+        
+        debias_beta = (self.lambda_ + curr_likelihood) / (self.lambda_ + observed_likelihood) 
+        
         
         current_V = self.critic1({'state_emb': S})['v']
 #         Q_S = self.critic({'state_emb': S, 'list_emb': L})['q']
         with torch.no_grad():
             current_Q_de = self.critic2({'state_emb': S, 'action_emb': A})['q'].detach()
         
-        critic_loss_one = (hac_pro * F.mse_loss(current_Q_de, current_V)).mean()
+        critic_loss_one = (debias_beta * F.mse_loss(current_Q_de, current_V)).mean()
 
         if do_critic_update and self.critic1_lr > 0:
             # Optimize the critic
