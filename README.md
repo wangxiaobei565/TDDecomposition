@@ -4,9 +4,9 @@
 - Intuitive Example : Standard TD approaches **VS** TD Decomposition approach
 <!-- ![image](https://github.com/wangxiaobei565/ItemDecomposition/blob/main/img/user_reco.jpg) -->
 
-Our RL simulator is followed [KuaiSim](https://github.com/CharlieMat/KRLBenchmark)
+Our RL simulator is followed [KuaiSim（Online simulator for RL-based recommendation）](https://github.com/CharlieMat/KRLBenchmark) 
 
-Online simulator for RL-based recommendation
+
 
 # 0.Setup
 
@@ -48,11 +48,9 @@ bash train_multi_behavior_user_response.sh
 Note: multi-behavior user response models consists the state_encoder that is assumed to be the ground truth user state transition model.
 
 
-# 2. Benchmarks
+# 2. Listwise Recommendation
 
-## 2.1 Listwise Recommendation
-
-### 2.1.1 Setup
+### 2.1 Setup
 
 Evaluation metrics and protocol
 
@@ -60,18 +58,18 @@ Evaluation metrics and protocol
 
 
 
-### 2.1.2 Training
+### 2.2 Training
 
 ```
 bash train_{model name}_krpure_requestlevel.sh
 ```
 
 
-## 2.2 Whole-session Recommendation
+## 2.3 Whole-session Recommendation
 
 Whole-session user interaction involves multiple request-feedback loops.
 
-### 2.2.1 Setup
+### 2.3.1 Setup
 
 Evaluation metrics and protocol
 
@@ -79,7 +77,7 @@ Evaluation metrics and protocol
 
 **Depth** represents how many interactions before the user leaves.
 
-### 2.2.2 Training
+### 2.3.2 Training
 
 ```
 bash train_{model name}_krpure_wholesession.sh
@@ -90,9 +88,14 @@ bash train_{model name}_krpure_wholesession.sh
 
 
 # 3. Our code
-We have released our TD decomposition approach with four different reinforcement learning methods: model actor-critic (A2C), deep deterministic policy gradient (DDPG), deep Q-network (DQN), and Hyper-Actor Critic(HAC). All original and decomposed versions of these methods are included in the /agents directory, along with their corresponding facade, policy, and critic modules.
-
+We have released our TD decomposition approach with four different reinforcement learning methods: 
+- actor-critic (A2C),
+- deep deterministic policy gradient (DDPG)
+- deep Q-network (DQN)
+- Hyper-Actor Critic(HAC)<br>
+All original and decomposed versions of these methods are included in the /agents directory, along with their corresponding facade, policy, and critic modules.
 Our TD decomposition method can be easily applied to any other TD-based reinforcement learning method. Below, we will provide an example of how to update an RL-based TD method to a decomposed version：
+
 ## critic 
 
 We should parpare two critic: one for Q and another for V
@@ -106,8 +109,27 @@ We should parpare two critic: one for Q and another for V
 
 facade for TD decomposition
 ```
-# 1. add one element debias in buffer
-# 2. calculate the normal 
+# 1. add one element debias_beta in replay buffer
+# 2. calculate the observed_likelihood in apply_policy
+if do_explore:
+     action_emb = out_dict['action_emb']
+     ac_sample = torch.randn_like(action_emb) * (self.noise_var)
+     
+     ac_clamp = torch.clamp(ac_sample, -1, 1)
+     # sampling noise of action embedding
+     if np.random.rand() < epsilon:
+         action_emb = ac_clamp
+     else:
+         action_emb = action_emb + ac_clamp
+     mean = 0
+     std = self.noise_var
+     
+     hac_pro = torch.exp(-((ac_clamp - mean) ** 2) / (2 * std** 2)) / (torch.sqrt(2 * torch.tensor(torch.pi) * (std ** 2))) + 1e-20
+     hac_pro = hac_pro.mean(dim=1)
+     # hac_pro = hac_pro.prod(dim=1)
+     out_dict['action_emb'] = action_emb
+     out_dict['hac_pro'] = hac_pro
+             
 
 ```
 
