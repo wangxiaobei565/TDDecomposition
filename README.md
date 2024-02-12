@@ -93,7 +93,9 @@ We have released our TD decomposition approach with four different reinforcement
 - deep deterministic policy gradient (DDPG)
 - deep Q-network (DQN)
 - Hyper-Actor Critic(HAC)<br>
+
 All original and decomposed versions of these methods are included in the /agents directory, along with their corresponding facade, policy, and critic modules.
+
 Our TD decomposition method can be easily applied to any other TD-based reinforcement learning method. Below, we will provide an example of how to update an RL-based TD method to a decomposed version：
 
 ## critic 
