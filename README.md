@@ -4,7 +4,7 @@
 - Intuitive Example : Standard TD approaches **VS** TD Decomposition approach
 <!-- ![image](https://github.com/wangxiaobei565/ItemDecomposition/blob/main/img/user_reco.jpg) -->
 
-Our RL simulator is followed [KuaiSim（Online simulator for RL-based recommendation）](https://github.com/CharlieMat/KRLBenchmark) 
+Our RL simulator is followed [KuaiSim(Online simulator for RL-based recommendation)](https://github.com/CharlieMat/KRLBenchmark) 
 
 
 
@@ -191,21 +191,6 @@ if do_critic_update and self.critic2_lr > 0:
 ```
 
 ## 3. Run code
-#### Search optimal hyperparameter for different method(optinonal)
-```
-cd /code/scripts/hyperparameter_search
-bash XXXX.sh
-```
-This step is to find optimal performance with adjustable hyperparameter. Our result can list as :
-|dataset|method|actor_lr|critic_lr|weight_lr|
-|--|--|--|--|--|
-|ML1M|itemA2C|3e-4|3e-5|None|
-|KuaiRand|itemA2C|3e-4|3e-5|None|
-|ML1M|itemA2C-W|3e-4|3e-5|None|
-|KuaiRand|itemA2C-W|3e-4|3e-5|None|
-|ML1M|itemA2C-M|3e-5|3e-6|1e-8|
-|KuaiRand|itemA2C-M|1e-3|3e-6|1e-7|
-
 
 #### run the main experiments or ablation experiments
 ```
