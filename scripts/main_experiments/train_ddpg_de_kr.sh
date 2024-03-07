@@ -50,7 +50,7 @@ do
                 do
                     mkdir -p ${output_path}agents/11TD_decomposition/2de_reqddpg/de_ddpg_${SCORER}_actor${ACTOR_LR}_critic${CRITIC1_LR}_${CRITIC2_LR}_niter${N_ITER}_reg${REG}_ep${INITEP}_noise${NOISE}_bs${BS}_epbs${EP_BS}_step${MAX_STEP}_seed${SEED}/
 
-                    python train_ddpg_de.py\
+                    python train_ac_de.py\
                         --env_class KREnvironment_GPU\
                         --policy_class OneStagePolicy_with_${SCORER}\
                         --critic_class1 GeneralCritic_V\
